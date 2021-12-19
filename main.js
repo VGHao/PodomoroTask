@@ -1,4 +1,3 @@
-
 (function(){
 
     if('serviceWorker' in navigator) {
@@ -88,6 +87,17 @@
                     _checkbox.addEventListener('change', function(e) {
                         if ( e.target.checked === true ) {
                             deleteTask(e.target.value);
+                            if (!("Notification" in window)) {
+                                alert("This browser does not support desktop notification");
+                            } else {
+                                console.log("Noti available")
+                            }
+                            Notification.requestPermission().then((result) => {
+                                if (result === 'granted') {
+                                    console.log("permission granted");
+                                    new Notification("Times up!!");
+                                }
+                            });
                         }
                     });
                 }
