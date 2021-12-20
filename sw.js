@@ -1,4 +1,5 @@
 const cacheName = 'Podo-v1';
+
 const staticAssets = [
     './',
     './index.html',

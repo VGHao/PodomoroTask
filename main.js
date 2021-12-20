@@ -7,14 +7,10 @@
     var db;
     var dbname = 'tasks';
 
-    openDatabase(function() {
-        console.log('db connected!');
-        getTask();
-    });
-    
     function openDatabase(callback){
-        var version =   1;
-        var request =   indexedDB.open(dbname, version);
+        var version = 1;
+        var request = indexedDB.open(dbname, version);
+
         request.onupgradeneeded = function(e) {
             db = e.target.result;
             e.target.transaction.onerror = databaseError;
@@ -33,16 +29,21 @@
         console.error('IndexedDB error:', e);
     }
 
-    function addTask( text, callback ){
-        var transaction =   db.transaction(['task'], 'readwrite');
-        var store       =   transaction.objectStore('task');
-        var request     =   store.put({
+    openDatabase(function() {
+        console.log('db connected!');
+        getTask();
+    });
+
+    function addTask(text, callback){
+        var transaction = db.transaction(['task'], 'readwrite');
+        var store = transaction.objectStore('task');
+        var request = store.put({
             text: text,
             timeStamp: Date.now(),
             isdone: false
         });
 
-        transaction.oncomplete  =   function(e) {
+        transaction.oncomplete = function(e) {
             callback();
         };
 
@@ -66,7 +67,7 @@
 
             // Reach the end of the data
             } else {
-                var html    = '';
+                var html = '';
                 data.forEach(function(eachdata){
                     html += `<li>
                         <span for="checkbox_${eachdata.timeStamp}">${eachdata.text}</span>
@@ -81,21 +82,17 @@
                 var appendField = document.querySelector('#task');
                 appendField.innerHTML = html;
 
-
-                var checkboxes  =   document.querySelectorAll("#task input");
+                var checkboxes = document.querySelectorAll("#task input");
                 for (const _checkbox of checkboxes) {
                     _checkbox.addEventListener('change', function(e) {
                         if ( e.target.checked === true ) {
                             deleteTask(e.target.value);
                             if (!("Notification" in window)) {
                                 alert("This browser does not support desktop notification");
-                            } else {
-                                console.log("Noti available")
                             }
                             Notification.requestPermission().then((result) => {
                                 if (result === 'granted') {
-                                    console.log("permission granted");
-                                    new Notification("Times up!!");
+                                    new Notification("Podomoro Task", {body: "Task is deleted!"});
                                 }
                             });
                         }
@@ -117,7 +114,7 @@
         };
     }
 
-    var taskfield   =   document.getElementById('task_input');
+    var taskfield = document.getElementById('task_input');
     taskfield.addEventListener('keydown', function(e){
         if (!e) e = window.event;
         var keyCode = e.keyCode || e.which;
@@ -190,34 +187,49 @@ timer_btn.addEventListener('click', function(e){
         timer_btn.innerText = "STOP";
         // Update the count down every 1 second
         var x = setInterval(function() {
-            // Get today's date and time
+            // Get current time
             var now = new Date().getTime();
             
             // Find the distance between now and the count down date
             var distance = countDownTime - now;
             
-            // Time calculations for days, hours, minutes and seconds
+            // Time calculations for minutes and seconds
             var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString();
             var seconds = Math.floor((distance % (1000 * 60)) / 1000).toString();
             
-            // Output the result in an element with id="demo"
+            // Output the result
             currentTimer.innerHTML = minutes.padStart(2, '0') + ":" + seconds.padStart(2, '0');
 
-            // If the count down is over, write some text 
+            // If the count down is over, send Notification and reset the timer
             if (distance < 0) {
                 clearInterval(x);
-                // Time calculations for days, hours, minutes and seconds
+
+                var currentState = $("body");
+                if(currentState.classList.contains("rest")){
+                    Notification.requestPermission().then((result) => {
+                        if (result === 'granted') {
+                            new Notification("Podomoro Task", {body: "Breaktime is up!! Please come back to work!"});
+                        }
+                    });
+                } else {
+                    Notification.requestPermission().then((result) => {
+                        if (result === 'granted') {
+                            new Notification("Podomoro Task", {body: "Nice work!! You can take a break now"});
+                        }
+                    });
+                }
+                // Time calculations for minutes and seconds
                 var minutes = Math.floor((defaultTime % (1000 * 60 * 60)) / (1000 * 60)).toString();
                 var seconds = Math.floor((defaultTime % (1000 * 60)) / 1000).toString();
                 
-                // Output the result in an element with id="demo"
+                // Output the result
                 currentTimer.innerHTML = minutes.padStart(2, '0') + ":" + seconds.padStart(2, '0');
-
+                
                 timer_btn.classList.remove("stop")
                 timer_btn.innerText = "START";
             }
         }, 1000);
-    }else {
+    } else {
         var killId = setTimeout(function() {
             for (var i = killId; i > 0; i--) 
                 clearInterval(i)
